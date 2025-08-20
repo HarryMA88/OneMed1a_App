@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -18,17 +19,28 @@ class UserServiceTest {
     @Mock
     private UserRepository repo;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private UserService service;
 
     @Test
     void create_savesUser() {
         // Arrange
+        String plainPassword = "Test123!";
+        String hashedPassword = "$2a$10$hashedPasswordExample"; 
+
         CreateUserDTO dto = new CreateUserDTO(
-                "Jane", "Smith", "jane@example.com",
-                User.Gender.FEMALE, LocalDate.of(1990, 1, 1));
+                "Jane", 
+                "Smith", 
+                "jane@example.com",
+                User.Gender.FEMALE, 
+                LocalDate.of(1990, 1, 1),
+                plainPassword);
 
         when(repo.existsByEmail("jane@example.com")).thenReturn(false);
+        when(passwordEncoder.encode(plainPassword)).thenReturn(hashedPassword);
 
         User saved = User.builder()
                 .id(1L)
@@ -37,6 +49,7 @@ class UserServiceTest {
                 .email(dto.getEmail())
                 .gender(dto.getGender())
                 .dateOfBirth(dto.getDateOfBirth())
+                .password(hashedPassword)
                 .build();
 
         when(repo.save(any(User.class))).thenReturn(saved);
